@@ -8,6 +8,7 @@ RouteCraft Sim is a routing simulation engine with weighted graph planning, alte
 - Directed traffic incident model with seeded deterministic generation
 - Alternative route generation via edge-penalty diversification
 - Multi-stop mission simulation with reroute logic and reliability scoring
+- Optimal stop ordering: exact Held-Karp DP up to 12 stops, 2-opt past that, reported next to the nearest-neighbour cost it replaced
 - CLI commands for network introspection, route planning, and mission simulation
 
 ## Run
