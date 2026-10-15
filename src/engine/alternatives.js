@@ -1,4 +1,4 @@
-import { edgeKey } from "./graph.js";
+import { edgeKey, routeCost } from "./graph.js";
 import { dijkstra } from "./pathfinding.js";
 
 function routeId(path) {
@@ -32,7 +32,9 @@ export function findAlternativeRoutes(graph, start, end, options = {}) {
     const id = routeId(result.path);
     if (!seen.has(id)) {
       seen.add(id);
-      routes.push(result);
+      // The search ran with the diversification penalties on; report what
+      // the route really costs, which is also what the ranking must use.
+      routes.push({ ...result, distance: routeCost(graph, result.path, { trafficMap: options.trafficMap }) });
     }
 
     applyPathPenalty(result.path, penalties, basePenalty * (i + 1));
