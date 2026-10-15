@@ -1,0 +1,14 @@
+{
+  "nodes": {
+    "yard": { "x": 0, "y": 0 },
+    "mill": { "x": 4, "y": 0 },
+    "dock": { "x": 4, "y": 3 },
+    "gate": { "x": 0, "y": 3 }
+  },
+  "edges": {
+    "yard": { "mill": 5 },
+    "mill": { "dock": 4 },
+    "dock": { "gate": 5, "yard": 9 },
+    "gate": { "yard": 4 }
+  }
+}

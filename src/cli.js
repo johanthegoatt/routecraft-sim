@@ -2,7 +2,25 @@ import { createGraph, edgeList } from "./engine/graph.js";
 import { planRoute, simulateMission } from "./engine/mission.js";
 import { generateTrafficIncidents } from "./engine/traffic.js";
 import { planMultiStopRoute } from "./router.js";
+import fs from "node:fs";
 import { defaultNetwork } from "./scenarios/defaultNetwork.js";
+
+// --network <file.json> swaps in your own map: { nodes: { id: { x, y } },
+// edges: { from: { to: minutes } } }. createGraph checks it.
+function loadNetwork(file) {
+  if (!file || file === true) return defaultNetwork;
+  let text;
+  try {
+    text = fs.readFileSync(file, "utf8");
+  } catch (error) {
+    throw new Error(`Can't read network file ${file}: ${error.code ?? error.message}`);
+  }
+  try {
+    return JSON.parse(text);
+  } catch (error) {
+    throw new Error(`Network file ${file} is not valid JSON: ${error.message}`);
+  }
+}
 
 function parseArgs(rawArgs) {
   const result = { _: [] };
@@ -33,6 +51,8 @@ function parseArgs(rawArgs) {
 
 function printHelp() {
   console.log("RouteCraft Sim CLI");
+  console.log("");
+  console.log("Every command takes --network <file.json> to use your own map instead of the built-in one.");
   console.log("");
   console.log("Commands:");
   console.log("  network");
@@ -101,14 +121,14 @@ function simulateCommand(graph, args) {
   printJson(report);
 }
 
-function multiStopCommand(args) {
+function multiStopCommand(network, args) {
   const start = args.start || "hub";
   const stops = String(args.stops || "north,market,depot")
     .split(",")
     .map((value) => value.trim())
     .filter(Boolean);
 
-  const report = planMultiStopRoute(defaultNetwork.edges, start, stops);
+  const report = planMultiStopRoute(network.edges, start, stops);
   printJson({
     start,
     requestedStops: stops,
@@ -166,7 +186,8 @@ function main() {
     return;
   }
 
-  const graph = createGraph(defaultNetwork);
+  const network = loadNetwork(parsed.network);
+  const graph = createGraph(network);
 
   if (command === "network") {
     networkCommand(graph);
@@ -184,7 +205,7 @@ function main() {
   }
 
   if (command === "multistop") {
-    multiStopCommand(parsed);
+    multiStopCommand(network, parsed);
     return;
   }
 

@@ -22,6 +22,14 @@ npm start -- multistop --start hub --stops north,market,depot
 npm start -- compare --start hub --end depot --seed 12 --intensity 0.5
 ```
 
+## Your own map
+
+Every command takes `--network <file.json>`: nodes with `x`/`y` positions and directed edges with a cost in minutes. One-way streets are just edges with no way back.
+
+```bash
+npm start -- plan --network examples/one-way-loop.json --start dock --end mill
+```
+
 ## Test
 ```bash
 cd routecraft-sim
