@@ -21,6 +21,22 @@ function distanceBetween(nodeA, nodeB) {
   return Math.hypot(nodeA.x - nodeB.x, nodeA.y - nodeB.y);
 }
 
+// Straight-line distance is in map units, edge costs are in minutes (and
+// scaled by traffic), so the raw distance can overestimate the remaining cost
+// and A* then settles on a longer route. Scaling it by the cheapest cost per
+// unit of distance over every edge keeps it a lower bound on every path,
+// which is what makes A* return the same answer as Dijkstra.
+export function heuristicScale(graph, options = {}) {
+  let scale = Number.POSITIVE_INFINITY;
+  for (const [from, neighbors] of Object.entries(graph.edges)) {
+    for (const to of Object.keys(neighbors)) {
+      const length = distanceBetween(graph.nodes[from], graph.nodes[to]);
+      if (length > 0) scale = Math.min(scale, edgeCostWithModifiers(graph, from, to, options) / length);
+    }
+  }
+  return Number.isFinite(scale) ? scale : 0;
+}
+
 export function dijkstra(graph, start, end, options = {}) {
   validateNode(graph, start);
   validateNode(graph, end);
@@ -83,6 +99,8 @@ export function aStar(graph, start, end, options = {}) {
   const gScore = new Map();
   const fScore = new Map();
   const visited = new Set();
+  const scale = heuristicScale(graph, options);
+  const estimate = (nodeId) => scale * distanceBetween(graph.nodes[nodeId], graph.nodes[end]);
 
   for (const nodeId of Object.keys(graph.nodes)) {
     gScore.set(nodeId, Number.POSITIVE_INFINITY);
@@ -90,7 +108,7 @@ export function aStar(graph, start, end, options = {}) {
   }
 
   gScore.set(start, 0);
-  fScore.set(start, distanceBetween(graph.nodes[start], graph.nodes[end]));
+  fScore.set(start, estimate(start));
   queue.push({ node: start, priority: fScore.get(start) });
 
   while (queue.size() > 0) {
@@ -115,8 +133,7 @@ export function aStar(graph, start, end, options = {}) {
       if (tentativeScore < gScore.get(neighbor)) {
         cameFrom.set(neighbor, current);
         gScore.set(neighbor, tentativeScore);
-        const heuristic = distanceBetween(graph.nodes[neighbor], graph.nodes[end]);
-        const priority = tentativeScore + heuristic;
+        const priority = tentativeScore + estimate(neighbor);
         fScore.set(neighbor, priority);
         queue.push({ node: neighbor, priority });
       }
